@@ -123,3 +123,15 @@ export interface ProductFilters {
   tags?: string[];
   inStock?: boolean;
 }
+
+//sorting options interface
+interface SortOption {
+  value: string;
+  label: string;
+}
+
+export interface SortFilterProps {
+  options?: SortOption[];
+  defaultValue?: string;
+  className?: string;
+}
