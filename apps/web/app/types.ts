@@ -1,248 +1,137 @@
-import { CategoryType, OrderStatus, ShippingMethod } from "@monkeyprint/db";
-import { OrderWithItems } from "./actions/orderActions";
-
-export interface ChatMessage {
+// Product related interfaces
+export interface ProductImage {
   id: string;
-  sender: "user" | "bot";
-  content: string;
-  timestamp: Date;
-}
-
-export interface ChatOrder {
-  id: string;
-  items: ChatOrderItem[];
-  totalPrice: number;
-  shippingMethod: "STANDARD" | "EXPRESS";
-  contactInfo: ContactInfo;
-}
-
-export interface ChatOrderItem {
+  url: string;
+  sortOrder: number;
+  createdAt: Date;
+  isDeleted: boolean;
   productId: string;
-  quantity: number;
-  price: number;
-  name: string;
-  imageUrl: string;
 }
 
-// types.ts
-export interface DesignZone {
+export interface ProductVariant {
   id: string;
   name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-  maxImagesAllowed?: number;
+  value: string;
+  price: number; // Will need conversion from Decimal
+  stock: number;
+  sku: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  productId: string;
 }
-export interface ProductOption {
+
+export interface Category {
   id: string;
   name: string;
-  price?: number;
-  ImpressionType?: string;
-  link?: string;
-  description: string;
-  images: {
-    front: string;
-    back: string;
-  };
-  designZones: {
-    front: DesignZone[];
-    back: DesignZone[];
+  slug: string;
+  description: string | null; // Changed to match Prisma
+  image: string | null; // Changed to match Prisma
+  parentId: string | null; // Changed to match Prisma
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  title: string | null; // Changed to match Prisma
+  comment: string | null; // Changed to match Prisma
+  isVerifiedPurchase: boolean;
+  isApproved: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  productId: string;
+  user: {
+    name: string | null;
   };
 }
 
 export interface Product {
   id: string;
   name: string;
-  description?: string | null;
-  price: number;
-  imageUrl: string;
-  storeId: string;
-  stock: number | null;
-  categories: ProductCategory[];
-  categoryIds?: string[];
-}
-
-export interface ProductState {
-  products: Product[];
-  filteredProducts: Product[];
-  loading: boolean;
-  loadProducts: () => Promise<void>;
-  loadStoreProducts: (storeId: string) => Promise<void>;
-  deleteProduct: (productId: string) => Promise<void>;
-  filterByCategories: (categoryIds: string[]) => Promise<void>;
-  filterByStoreAndCategories: (
-    storeId: string,
-    categoryIds: string[]
-  ) => Promise<void>;
-}
-
-export interface IUpdatedProductData {
-  name: string;
-  description?: string;
-  price: number;
-  imageUrl: string;
-  stock?: number;
-}
-
-export interface IProductData {
-  name: string;
-  description?: string;
-  price: number;
-  imageUrl: string;
-  stock?: number;
-  storeId?: string;
-  categoryIds?: string[];
-}
-
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
+  slug: string;
+  description: string | null; // Changed to match Prisma
+  shortDescription: string | null; // Changed to match Prisma
+  price: number; // Will need conversion from Decimal
+  comparePrice: number | null; // Changed to match Prisma
+  sku: string;
   stock: number;
-  quantity: number;
-}
-
-export interface CartState {
-  cart: CartItem[];
-  addToCart: (product: CartItem) => Promise<void>;
-  updateCartItemQuantity: (
-    productId: string,
-    quantity: number
-  ) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
-  clearCart: () => Promise<void>;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  type: CategoryType;
-  parentCategories?: CategoryRelation[];
-  childCategories?: CategoryRelation[];
+  lowStockThreshold: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  metaTitle: string | null; // Changed to match Prisma
+  metaDescription: string | null; // Changed to match Prisma
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
-  isDeleted: boolean;
-}
+  categoryId: string;
 
-export interface CategoryState {
-  targetCategories: Category[];
-  productCategories: Category[];
-  subproductCategories: Category[];
-  categoryRelations: CategoryRelations;
-  loading: boolean;
-  refreshCategories: () => Promise<void>;
-  getProductCategoriesByTarget: (targetId: string) => Category[];
-  getSubproductCategoriesByProduct: (productId: string) => Category[];
-}
+  // Relations
+  category: Category;
+  images: ProductImage[];
+  variants: ProductVariant[];
+  reviews?: Review[];
 
-export interface CategoryRelations {
-  [key: string]: {
-    parents: string[];
-    children: string[];
+  // Counts (for detailed queries)
+  _count?: {
+    reviews: number;
+    orderItems: number;
   };
 }
 
-export interface CategoryRelation {
-  parentId: string;
-  childId: string;
-  parent?: Category;
-  child?: Category;
-}
-
-export interface ICategoryData {
-  name: string;
-  type: CategoryType;
-  parentIds?: string[];
-}
-
-/* export interface CategoryType {
-  TARGET: "TARGET";
-  PRODUCT: "PRODUCT";
-  SUBPRODUCT: "SUBPRODUCT";
-} */
-
-export interface ProductCategory {
-  productId: string;
-  categoryId: string;
-  category: Category;
-}
-
-export interface CategoriesFilterProps {
-  selectedCategory: string;
-  selectedSubCategories: string[];
-  onCategorySelect: (categoryId: string) => void;
-  onSubCategorySelect: (subCategoryIds: string[]) => void;
-}
-
-export interface ProductCategorySectionProps {
-  category: Category;
-  isExpanded: boolean;
-  onToggle: () => void;
-  selectedSubCategories: string[];
-  onSubCategorySelect: (subCategoryId: string) => void;
-}
-
-export interface SubcategoriesProps {
-  subcategories: Category[];
-  selectedSubcategories: string[];
-  onSubcategoryClick: (subcategoryId: string) => void;
-}
-
-export interface CategoryResponse {
-  success: boolean;
-  category?: Category;
-  categories?: Category[];
-  error?: string;
-}
-
+// Response interface with proper typing
 export interface ProductResponse {
   success: boolean;
-  product?: Product;
-  products?: Product[];
+  products: Product[];
   error?: string;
+  totalCount?: number;
 }
 
-export interface PaginationProps {
-  take: number;
-  skip: number;
-}
-
-export interface ContactInfo {
-  id: string;
+// Keep form interfaces with optional for easier form handling
+export interface ProductFormData {
   name: string;
-  orderId: string;
-  phone: string;
-  email: string | null;
-  country: string;
-  address: string;
-  city: string;
-}
-export interface OrderItem extends CartItem {
-  orderId: string;
-  productId: string;
+  description?: string;
+  shortDescription?: string;
+  price: number;
+  comparePrice?: number;
+  sku: string;
+  stock: number;
+  lowStockThreshold?: number;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  tags?: string[];
+  categoryId: string;
 }
 
-export interface Order {
+export interface ProductUpdateData extends Partial<ProductFormData> {
   id: string;
-  userId?: string | null;
-  status: OrderStatus;
-  totalPrice: number;
-  shippingMethod: ShippingMethod;
-  shippingFee: number;
-  items: OrderItem[];
-  contactInfo: ContactInfo | null;
-  createdAt: Date;
-  updatedAt: Date;
-  storeId: string;
-  isDeleted: boolean;
 }
 
-export interface OrderResponse {
-  success: boolean;
-  order?: OrderWithItems;
-  orders?: OrderWithItems[];
-  error?: string;
+export interface ProductFilters {
+  categoryId?: string;
+  search?: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  tags?: string[];
+  inStock?: boolean;
+}
+
+//sorting options interface
+interface SortOption {
+  value: string;
+  label: string;
+}
+
+export interface SortFilterProps {
+  options?: SortOption[];
+  defaultValue?: string;
+  className?: string;
 }
