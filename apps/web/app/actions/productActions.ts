@@ -577,7 +577,8 @@ export async function getProductById(id: string): Promise<ProductResponse> {
 }
 
 export async function getProductsByCategorySlug(
-  slug: string
+  slug: string,
+  sortOption?: string
 ): Promise<ProductResponse> {
   try {
     const validation = validateSlug(slug);
@@ -598,7 +599,45 @@ export async function getProductsByCategorySlug(
       ...category.subcategories.map((sub) => sub.id),
     ];
 
-    return getProductsByCondition({ categoryId: { in: categoryIds } });
+    // Special case for popularity sorting
+    if (sortOption === "popular") {
+      const products = await db.product.findMany({
+        where: {
+          isActive: true,
+          categoryId: { in: categoryIds },
+        },
+        include: {
+          ...PRODUCT_INCLUDE,
+          _count: { select: { orderItems: true } },
+        },
+        orderBy: {
+          orderItems: { _count: "desc" },
+        },
+      });
+      return successResponse(products);
+    }
+
+    // Define ordering based on sort option
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: "desc" };
+
+    switch (sortOption) {
+      case "price-asc":
+        orderBy = { price: "asc" };
+        break;
+      case "price-desc":
+        orderBy = { price: "desc" };
+        break;
+      // popular case is handled separately above
+      default:
+        // Keep default (newest)
+        break;
+    }
+
+    return getProductsByCondition(
+      { categoryId: { in: categoryIds } },
+      undefined,
+      orderBy
+    );
   } catch (error) {
     return handleError(error, "Failed to fetch products by category slug");
   }
